@@ -17,6 +17,13 @@ namespace ConsoleRunner.Tests
 {
     public class ScopedJobFactoryTests
     {
+        public readonly IServiceProvider ServiceProvider;
+
+        public ScopedJobFactoryTests()
+        {
+            ServiceProvider = ConfigureServices();
+        }
+        
         [Fact]
         public async Task scoped_dependencies()
         {
@@ -43,6 +50,15 @@ namespace ConsoleRunner.Tests
             job1.SingletonDependency1.ShouldBeSameAs(job1.SingletonDependency2);
             job1.SingletonDependency1.ShouldBeSameAs(job2.SingletonDependency2);
         }
+
+        [Fact]
+        public async Task jobs_are_disposed()
+        {
+            var (job1, job2) = await RunTwoJobs();
+
+            job1.Disposed.ShouldBeTrue();
+            job2.Disposed.ShouldBeTrue();
+        }
         
         private static IServiceProvider ConfigureServices()
         {
@@ -56,7 +72,7 @@ namespace ConsoleRunner.Tests
             
             services.AddTransient<IJobFactory, ScopedJobFactory>();
             services.AddTransient<Job>();
-            
+
             services.AddLogging(config => config.AddConsole());
 
             return services.BuildServiceProvider();
@@ -64,12 +80,10 @@ namespace ConsoleRunner.Tests
 
         private async Task<(Job, Job)> RunTwoJobs()
         {
-            var serviceProvider = ConfigureServices();
-            
             var schedulerFactory = new StdSchedulerFactory();
             var scheduler = await schedulerFactory.GetScheduler(CancellationToken.None);
 
-            scheduler.JobFactory = serviceProvider.GetRequiredService<IJobFactory>();
+            scheduler.JobFactory = ServiceProvider.GetRequiredService<IJobFactory>();
             
             var jobTracker = new JobTracker();
 
@@ -116,7 +130,7 @@ namespace ConsoleRunner.Tests
     {
     }
 
-    public class Job : IJob
+    public class Job : IJob, IDisposable
     {
         public readonly ScopedDependency ScopedDependency1;
         public readonly ScopedDependency ScopedDependency2;
@@ -124,6 +138,7 @@ namespace ConsoleRunner.Tests
         public readonly TransientDependency TransientDependency2;
         public readonly SingletonDependency SingletonDependency1;
         public readonly SingletonDependency SingletonDependency2;
+        public bool Disposed = false;
 
         public Job(ScopedDependency scopedDependency1, ScopedDependency scopedDependency2, TransientDependency transientDependency1, TransientDependency transientDependency2, SingletonDependency singletonDependency1, SingletonDependency singletonDependency2)
         {
@@ -138,6 +153,11 @@ namespace ConsoleRunner.Tests
         public Task Execute(IJobExecutionContext context)
         {
             return Task.FromResult(true);
+        }
+
+        public void Dispose()
+        {
+            Disposed = true;
         }
     }
 
