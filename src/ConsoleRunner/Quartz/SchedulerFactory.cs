@@ -1,11 +1,8 @@
 ﻿using ConsoleRunner.Persistence;
-using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 using Quartz.Impl;
-using Quartz.Impl.Matchers;
 using Quartz.Logging;
 using Quartz.Spi;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -15,12 +12,23 @@ using System.Threading.Tasks;
 
 namespace ConsoleRunner.Quartz
 {
-    public static class SchedulerFactory
+    public class SchedulerFactory
     {
-        public static async Task<IScheduler> GetSchedulerAsync(IServiceProvider serviceProvider)
+        private readonly ILogProvider _logProvider;
+        private readonly IJobFactory _jobFactory;
+        private readonly ICronJobsRepository _cronJobsRepository;
+
+        public SchedulerFactory(ILogProvider logProvider, IJobFactory jobFactory, ICronJobsRepository cronJobsRepository)
+        {
+            _logProvider = logProvider;
+            _jobFactory = jobFactory;
+            _cronJobsRepository = cronJobsRepository;
+        }
+
+        public async Task<IScheduler> GetSchedulerAsync()
         {
             //Quartz.NET
-            LogProvider.SetCurrentLogProvider(serviceProvider.GetService<ILogProvider>());
+            LogProvider.SetCurrentLogProvider(_logProvider);
 
             var quartzProperties = new NameValueCollection
             {
@@ -32,9 +40,9 @@ namespace ConsoleRunner.Quartz
             var schedulerFactory = new StdSchedulerFactory(quartzProperties);
             var scheduler = await schedulerFactory.GetScheduler(CancellationToken.None);
 
-            scheduler.JobFactory = serviceProvider.GetRequiredService<IJobFactory>();
+            scheduler.JobFactory = _jobFactory;
 
-            await ScheduleJobsAsync(scheduler, serviceProvider.GetRequiredService<ICronJobsRepository>());
+            await ScheduleJobsAsync(scheduler, _cronJobsRepository);
 
             return scheduler;
         }

@@ -22,7 +22,9 @@ namespace ConsoleRunner
         {
             var serviceProvider = ConfigureServices();
 
-            var scheduler = await SchedulerFactory.GetSchedulerAsync(serviceProvider);
+            var schedulerFactory = serviceProvider.GetRequiredService<SchedulerFactory>();
+
+            var scheduler = await schedulerFactory.GetSchedulerAsync();
             
             await scheduler.Start(CancellationToken.None);
 
@@ -37,6 +39,7 @@ namespace ConsoleRunner
             var services = new ServiceCollection();
 
             services.AddLogging(config => config.AddConsole());
+            services.AddSingleton<SchedulerFactory>();
             services.AddTransient<IJobFactory, ScopedJobFactory>();
             services.AddSingleton<ILogProvider, MicrosoftLogProvider>();
             services.AddLogging(config => {
