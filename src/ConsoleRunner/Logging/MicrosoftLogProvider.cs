@@ -59,14 +59,23 @@ namespace ConsoleRunner.Logging
             };
         }
 
-        public IDisposable OpenNestedContext(string message)
-        {
-            throw new NotImplementedException();
-        }
-
         public IDisposable OpenMappedContext(string key, string value)
         {
-            throw new NotImplementedException();
+            return NullDisposable.Instance;
+        }
+
+        public IDisposable OpenNestedContext(string message)
+        {
+            return NullDisposable.Instance;
+        }
+
+        private class NullDisposable : IDisposable
+        {
+            internal static readonly IDisposable Instance = new NullDisposable();
+
+            public void Dispose()
+            {
+            }
         }
     }
 }
