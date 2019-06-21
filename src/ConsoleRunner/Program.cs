@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
 using ConsoleRunner.Logging;
@@ -9,8 +6,6 @@ using ConsoleRunner.Persistence;
 using ConsoleRunner.Quartz;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Quartz;
-using Quartz.Impl;
 using Quartz.Logging;
 using Quartz.Spi;
 
@@ -28,11 +23,9 @@ namespace ConsoleRunner
             var serviceProvider = ConfigureServices();
 
             var scheduler = await SchedulerFactory.GetSchedulerAsync(serviceProvider);
-
-            await ScheduleJobsAsync(scheduler, serviceProvider.GetRequiredService<ICronJobsRepository>());
-
-            await scheduler.Start(CancellationToken.None);
             
+            await scheduler.Start(CancellationToken.None);
+
             await Console.In.ReadLineAsync();
 
             await scheduler.Shutdown(CancellationToken.None);
@@ -46,48 +39,14 @@ namespace ConsoleRunner
             services.AddLogging(config => config.AddConsole());
             services.AddTransient<IJobFactory, ScopedJobFactory>();
             services.AddSingleton<ILogProvider, MicrosoftLogProvider>();
+            services.AddLogging(config => {
+                config.AddConsole();
+                //config.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+            });
             services.AddTransient<Job>();
             services.AddTransient<ICronJobsRepository, CronJobsRepository>();
 
             return services.BuildServiceProvider();
-        }
-
-        private static async Task ScheduleJobsAsync(IScheduler scheduler, ICronJobsRepository jobsRepository)
-        {
-            var jobs = await jobsRepository.GetJobsAsync();
-
-            foreach (var job in jobs)
-            {
-                var jobDataMap = new JobDataMap((IDictionary<string, object>) new Dictionary<string, object>
-                {
-                    { "Job", job }
-                });
-                
-                var jobDetail = JobBuilder.Create<Job>()
-                    .SetJobData(jobDataMap)
-                    .WithIdentity((string) job.Id.ToString())
-                    .Build();
-
-                var triggers = new List<ITrigger>
-                {
-                    TriggerBuilder.Create()
-                        .WithIdentity((string) job.Id.ToString())
-                        .WithCronSchedule(job.CronExpression)
-                        .Build()
-                };
-
-                if (job.StartImmediately)
-                {
-                    triggers.Add(
-                    TriggerBuilder.Create()
-                        .WithIdentity($"{job.Id.ToString()} Immediate")
-                        .StartNow()
-                            .Build()
-                    );
-                }
-
-                await scheduler.ScheduleJob(jobDetail, new ReadOnlyCollection<ITrigger>(triggers), false, CancellationToken.None);
-            }
-        }
+        }        
     }
 }

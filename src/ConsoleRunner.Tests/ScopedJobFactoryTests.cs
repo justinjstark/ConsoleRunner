@@ -153,7 +153,7 @@ namespace ConsoleRunner.Tests
 
         public Task Execute(IJobExecutionContext context)
         {
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
         public void Dispose()
@@ -176,12 +176,12 @@ namespace ConsoleRunner.Tests
         
         public Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = new CancellationToken())
         {
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
         public Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = new CancellationToken())
         {
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
         public Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException,
@@ -189,7 +189,7 @@ namespace ConsoleRunner.Tests
         {
             JobsRun.Add(context);
             
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
         public string Name => "JobTracker";

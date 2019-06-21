@@ -7,6 +7,7 @@ namespace ConsoleRunner
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public bool Enabled { get; set; }
         public string Executable { get; set; }
         public IEnumerable<string> Arguments { get; set; }
         public string CronExpression { get; set; }
