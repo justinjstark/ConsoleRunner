@@ -12,8 +12,9 @@ Features:
 - [x] Quartz ShutdownHook plugin
 - [x] Log with Microsoft.Extensions.Logging
 - [x] Run console applications
-- [ ] Ability to install as a Windows Service
 - [x] Track run results (exit code, STDOUT, and STDERR)
+- [x] Per-app timeouts
+- [ ] Ability to install as a Windows Service
 - [ ] Job queue tracking and warnings
 - [ ] Long-running job warnings (configurable per job)
 - [ ] Long-running job warnings (automatic based on job run history)
