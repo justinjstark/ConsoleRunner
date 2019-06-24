@@ -53,7 +53,20 @@ namespace ConsoleRunner.Persistence
                     CronExpression = "*/20 * * * * ? *", //Every 20 seconds
                     StartImmediately = true,
                     SkipIfAlreadyRunning = false
-                }
+                },
+                new CronJob
+                {
+                    Id = new Guid("938ca9b4-a6ef-4387-b165-89740bb3742b"),
+                    Name = "I Run Longer Than Specified",
+                    Enabled = true,
+                    Executable = "ExampleExes/ConsoleRunner.ExampleExe.exe",
+                    Arguments = new string[] { "", "3" },
+                    CronExpression = "*/5 * * * * ? *", //Every 5 seconds
+                    StartImmediately = true,
+                    SkipIfAlreadyRunning = true,
+                    LogWarningAfter = TimeSpan.FromSeconds(1),
+                    LogErrorAfter = TimeSpan.FromSeconds(2)
+                },
             };
 
             return await Task.FromResult(jobs);
