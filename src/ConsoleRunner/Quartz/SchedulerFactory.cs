@@ -56,7 +56,7 @@ namespace ConsoleRunner.Quartz
             {
                 var jobDataMap = new JobDataMap((IDictionary<string, object>) new Dictionary<string, object>
                 {
-                    { "Job", job }
+                    { "CronJob", job }
                 });
 
                 var jobDetail = JobBuilder.Create<Job>()
