@@ -53,17 +53,22 @@ namespace ConsoleRunner.Quartz
                  * It’s better if the job catches all exception it may encounter, handle
                  * them, and reschedule itself, or other jobs to work around the issue.
                  */
-                _logger.LogError(exception, $"{job.Name} threw an exception");
+                _logger.LogError(exception, $"{job.Name} threw an exception.");
                 return;
             }
 
             if (commandResult.Success && !string.IsNullOrWhiteSpace(commandResult.StandardOutput))
             {
-                _logger.LogInformation($"{job.Name} {commandResult.StandardOutput.Trim('\n')}");
+                _logger.LogInformation($"{job.Name} had standard output.\n{commandResult.StandardOutput.Trim('\n')}");
             }
             else
             {
-                _logger.LogError($"{job.Name} EXIT CODE {commandResult.ExitCode}\n{commandResult.StandardError.Trim('\n')}");
+                var message = $"{job.Name} returned an non-zero exit code [{commandResult.ExitCode}].";
+                if (!string.IsNullOrWhiteSpace(commandResult.StandardError))
+                {
+                    message += "\nStandard Error:\n{ commandResult.StandardError.Trim('\n')} ";
+                }
+                _logger.LogError(message);
             }
 
             _logger.LogDebug($"{job.Name} ending");
