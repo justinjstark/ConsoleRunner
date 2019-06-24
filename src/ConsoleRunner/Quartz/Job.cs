@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Medallion.Shell;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
@@ -10,10 +9,12 @@ namespace ConsoleRunner.Quartz
 {
     public class Job : IJob
     {
+        private readonly ICommandRunner _exeExecuter;
         private readonly ILogger<Job> _logger;
-
-        public Job(ILogger<Job> logger)
+        
+        public Job(ICommandRunner exeExecuter, ILogger<Job> logger)
         {
+            _exeExecuter = exeExecuter;
             _logger = logger;
         }
         
@@ -23,11 +24,11 @@ namespace ConsoleRunner.Quartz
 
             if (cronJob.SkipIfAlreadyRunning && await JobIsAlreadyRunning(context))
             {
-                _logger.LogWarning($"{cronJob.Name} is already running. Skipping.");
+                _logger.LogWarning(Resources.JobIsAlreadyRunning, cronJob.Name);
                 return;
             }
 
-            _logger.LogDebug($"{cronJob.Name} starting");
+            _logger.LogDebug(Resources.JobIsStarting, cronJob.Name);
 
             CommandResult commandResult;
             try
@@ -36,7 +37,7 @@ namespace ConsoleRunner.Quartz
             }
             catch (TimeoutException exception)
             {
-                _logger.LogError(exception, $"{cronJob.Name} timed out.");
+                _logger.LogError(exception, Resources.JobTimedOut, cronJob.Name);
                 return;
             }
             catch (Exception exception)
@@ -51,28 +52,29 @@ namespace ConsoleRunner.Quartz
                  * It’s better if the job catches all exception it may encounter, handle
                  * them, and reschedule itself, or other jobs to work around the issue.
                  */
-                _logger.LogError(exception, $"{cronJob.Name} threw an exception.");
+                _logger.LogError(exception, Resources.JobThrewAnException, cronJob.Name);
                 return;
             }
 
+            //TODO: Move detailed results to job history tracking
             if (commandResult.Success)
             {
-                var message = $"{cronJob.Name} ran successfully";
+                var message = string.Format(Resources.JobRanSuccessfully, cronJob.Name);
                 if (!string.IsNullOrWhiteSpace(commandResult.StandardOutput))
-                {
+                {                    
                     message += $"\nStandard Output:\n{commandResult.StandardOutput.Trim('\n')}";
                 }
                 _logger.LogInformation(message);
             }
             else
             {
-                var message = $"{cronJob.Name} returned an non-zero exit code [{commandResult.ExitCode}].";
+                var message = string.Format(Resources.JobErrored, cronJob.Name, commandResult.ExitCode);
                 if (!string.IsNullOrWhiteSpace(commandResult.StandardError))
                 {
                     message += $"\nStandard Error:\n{commandResult.StandardError.Trim('\n')}";
                 }
                 _logger.LogError(message);
-            }            
+            }
         }
 
         private async Task<CommandResult> ExecuteWithMonitors(IJobExecutionContext context, CronJob cronJob)
@@ -81,11 +83,16 @@ namespace ConsoleRunner.Quartz
                     cronJob: cronJob,
                     cancellationToken: cronJob.StopIfApplicationStopping ? context.CancellationToken : CancellationToken.None);
 
-            var (monitorTasks, monitorCancellationTokenSource) = CreateMonitorTasks(context, cronJob);
-            
-            await Task.WhenAll(monitorTasks.Append(commandTask));
+            var (_, monitorCancellationTokenSource) = CreateMonitorTasks(context, cronJob);
 
-            monitorCancellationTokenSource.Cancel();
+            try
+            {
+                await commandTask;
+            }
+            finally
+            {
+                monitorCancellationTokenSource.Cancel();
+            }
 
             return commandTask.Result;
         }
@@ -98,11 +105,11 @@ namespace ConsoleRunner.Quartz
             {
                 CreateDurationMonitorTask(
                     duration: cronJob.LogWarningAfter,
-                    action: () => _logger.LogWarning($"{cronJob.Name} is running longer than specified."),
+                    action: () => _logger.LogWarning(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name),
                     cancellationToken: cancellationTokenSource.Token),
                 CreateDurationMonitorTask(
                     duration: cronJob.LogErrorAfter,
-                    action: () => _logger.LogError($"{cronJob.Name} is running longer than specified."),
+                    action: () => _logger.LogError(Resources.JobIsRunningLongerThanExpectedError, cronJob.Name),
                     cancellationToken: cancellationTokenSource.Token)
             };
 
@@ -120,14 +127,7 @@ namespace ConsoleRunner.Quartz
 
         private async Task<CommandResult> Execute(CronJob cronJob, CancellationToken cancellationToken)
         {
-            var command = Command.Run(cronJob.Executable, cronJob.Arguments, options =>
-            {
-                options.CancellationToken(cancellationToken);
-                if (cronJob.Timeout != null)
-                {
-                    options.Timeout(cronJob.Timeout.Value);
-                }
-            });
+            var command = await _exeExecuter.RunAsync(cronJob.Executable, cronJob.Timeout, cancellationToken, cronJob.Arguments.Cast<object>().ToArray());
 
             return await command.Task;
         }

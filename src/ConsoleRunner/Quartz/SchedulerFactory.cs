@@ -61,13 +61,13 @@ namespace ConsoleRunner.Quartz
 
                 var jobDetail = JobBuilder.Create<Job>()
                     .SetJobData(jobDataMap)
-                    .WithIdentity((string)job.Id.ToString())
+                    .WithIdentity(job.Id.ToString())
                     .Build();
 
                 var triggers = new List<ITrigger>
                 {
                     TriggerBuilder.Create()
-                        .WithIdentity((string) job.Id.ToString())
+                        .WithIdentity(job.Id.ToString())
                         .WithCronSchedule(job.CronExpression)
                         .Build()
                 };
