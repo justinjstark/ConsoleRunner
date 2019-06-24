@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Medallion.Shell;
@@ -28,9 +29,33 @@ namespace ConsoleRunner.Quartz
 
             _logger.LogDebug($"{job.Name} starting");
 
-            var commandResult = await Execute(
+            CommandResult commandResult = null;
+            try
+            {
+                commandResult = await Execute(
                 job: job,
                 cancellationToken: job.StopIfApplicationStopping ? context.CancellationToken : CancellationToken.None);
+            }
+            catch (TimeoutException exception)
+            {
+                _logger.LogError(exception, $"{job.Name} timed out.");
+                return;
+            }
+            catch (Exception exception)
+            {
+                /*
+                 * https://www.quartz-scheduler.net/documentation/best-practices.html
+                 * A Job’s execute method should contain a try-catch block that handles
+                 * all possible exceptions.
+                 * 
+                 * If a job throws an exception, Quartz will typically immediately
+                 * re-execute it (and it will likely throw the same exception again).
+                 * It’s better if the job catches all exception it may encounter, handle
+                 * them, and reschedule itself, or other jobs to work around the issue.
+                 */
+                _logger.LogError(exception, $"{job.Name} threw an exception");
+                return;
+            }
 
             if (commandResult.Success && !string.IsNullOrWhiteSpace(commandResult.StandardOutput))
             {
