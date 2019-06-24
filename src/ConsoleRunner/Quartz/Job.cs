@@ -66,7 +66,7 @@ namespace ConsoleRunner.Quartz
                 var message = $"{job.Name} returned an non-zero exit code [{commandResult.ExitCode}].";
                 if (!string.IsNullOrWhiteSpace(commandResult.StandardError))
                 {
-                    message += "\nStandard Error:\n{ commandResult.StandardError.Trim('\n')} ";
+                    message += $"\nStandard Error:\n{ commandResult.StandardError.Trim('\n')} ";
                 }
                 _logger.LogError(message);
             }
