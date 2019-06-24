@@ -18,9 +18,9 @@ namespace ConsoleRunner.Quartz
         
         public async Task Execute(IJobExecutionContext context)
         {
-            var job = (CronJob)context.JobDetail.JobDataMap["Job"];
+            var job = (CronJob)context.MergedJobDataMap["CronJob"];
 
-            if (job.SkipIfAlreadyRunning && await JobIsAlreadyRunning(context, job))
+            if (job.SkipIfAlreadyRunning && await JobIsAlreadyRunning(context))
             {
                 _logger.LogWarning($"{job.Name} is already running. Skipping.");
                 return;
@@ -58,7 +58,7 @@ namespace ConsoleRunner.Quartz
             return await command.Task;
         }
 
-        private async Task<bool> JobIsAlreadyRunning(IJobExecutionContext context, CronJob job)
+        private async Task<bool> JobIsAlreadyRunning(IJobExecutionContext context)
         {
             return (await context.Scheduler.GetCurrentlyExecutingJobs()).Any(j =>
                 j.JobDetail.Equals(context.JobDetail) && !j.JobInstance.Equals(this));
