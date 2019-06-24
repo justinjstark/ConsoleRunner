@@ -81,7 +81,7 @@ namespace ConsoleRunner.Quartz
                     cronJob: cronJob,
                     cancellationToken: cronJob.StopIfApplicationStopping ? context.CancellationToken : CancellationToken.None);
 
-            var (monitorTasks, monitorCancellationTokenSource) = CreateMonitoringTasks(context, cronJob);
+            var (monitorTasks, monitorCancellationTokenSource) = CreateMonitorTasks(context, cronJob);
             
             await Task.WhenAll(monitorTasks.Append(commandTask));
 
@@ -90,7 +90,7 @@ namespace ConsoleRunner.Quartz
             return commandTask.Result;
         }
 
-        private (Task[], CancellationTokenSource) CreateMonitoringTasks(IJobExecutionContext context, CronJob cronJob)
+        private (Task[], CancellationTokenSource) CreateMonitorTasks(IJobExecutionContext context, CronJob cronJob)
         {
             var cancellationTokenSource = new CancellationTokenSource();
 
