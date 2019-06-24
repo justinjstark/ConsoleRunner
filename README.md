@@ -14,9 +14,9 @@ Features:
 - [x] Run console applications
 - [x] Track run results (exit code, STDOUT, and STDERR)
 - [x] Per-app timeouts
+- [x] Long-running job warnings (configurable per job)
 - [ ] Ability to install as a Windows Service
 - [ ] Job queue tracking and warnings
-- [ ] Long-running job warnings (configurable per job)
 - [ ] Long-running job warnings (automatic based on job run history)
 - [ ] EntityFramework job store
 - [ ] EntityFramework run-history store
