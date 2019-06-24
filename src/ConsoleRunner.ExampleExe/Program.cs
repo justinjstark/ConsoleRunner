@@ -7,11 +7,14 @@ namespace ConsoleRunner.ExampleExe
     {
         static void Main(string[] args)
         {
-            if (args[0] == "CRASH") throw new Exception("OH NOES!");
+            Thread.Sleep(TimeSpan.FromSeconds(double.Parse(args[0])));
 
-            Console.WriteLine(args[0]);
+            if (args.Length > 1)
+            {
+                if (args[1] == "CRASH") throw new Exception("OH NOES!");
 
-            Thread.Sleep(TimeSpan.FromSeconds(double.Parse(args[1])));
+                Console.WriteLine(args[1]);
+            }
         }
     }
 }

@@ -6,11 +6,11 @@ using MicrosoftLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace ConsoleRunner.Logging
 {
-    public class MicrosoftLogProvider : ILogProvider
+    public class MicrosoftLibLogWrapper : ILogProvider
     {
-        private readonly ILogger<MicrosoftLogProvider> _logger;
+        private readonly ILogger<MicrosoftLibLogWrapper> _logger;
 
-        public MicrosoftLogProvider(ILogger<MicrosoftLogProvider> logger)
+        public MicrosoftLibLogWrapper(ILogger<MicrosoftLibLogWrapper> logger)
         {
             _logger = logger;
         }

@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using ConsoleRunner.Logging;
+using ConsoleRunner.MedallionShell;
 using ConsoleRunner.Persistence;
 using ConsoleRunner.Quartz;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,7 +42,8 @@ namespace ConsoleRunner
             services.AddLogging(config => config.AddConsole());
             services.AddSingleton<SchedulerFactory>();
             services.AddTransient<IJobFactory, ScopedJobFactory>();
-            services.AddSingleton<ILogProvider, MicrosoftLogProvider>();
+            services.AddTransient<ICommandRunner, MedallionCommandRunner>();
+            services.AddSingleton<ILogProvider, MicrosoftLibLogWrapper>();
             services.AddLogging(config => {
                 config.AddConsole();
                 //config.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);

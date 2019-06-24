@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Medallion.Shell;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
@@ -10,10 +9,12 @@ namespace ConsoleRunner.Quartz
 {
     public class Job : IJob
     {
+        private readonly ICommandRunner _exeExecuter;
         private readonly ILogger<Job> _logger;
-
-        public Job(ILogger<Job> logger)
+        
+        public Job(ICommandRunner exeExecuter, ILogger<Job> logger)
         {
+            _exeExecuter = exeExecuter;
             _logger = logger;
         }
         
@@ -27,7 +28,7 @@ namespace ConsoleRunner.Quartz
                 return;
             }
 
-            _logger.LogDebug($"{cronJob.Name} starting");
+            _logger.LogDebug($"{cronJob.Name} starting.");
 
             CommandResult commandResult;
             try
@@ -57,7 +58,7 @@ namespace ConsoleRunner.Quartz
 
             if (commandResult.Success)
             {
-                var message = $"{cronJob.Name} ran successfully";
+                var message = $"{cronJob.Name} ran successfully.";
                 if (!string.IsNullOrWhiteSpace(commandResult.StandardOutput))
                 {
                     message += $"\nStandard Output:\n{commandResult.StandardOutput.Trim('\n')}";
@@ -72,7 +73,7 @@ namespace ConsoleRunner.Quartz
                     message += $"\nStandard Error:\n{commandResult.StandardError.Trim('\n')}";
                 }
                 _logger.LogError(message);
-            }            
+            }
         }
 
         private async Task<CommandResult> ExecuteWithMonitors(IJobExecutionContext context, CronJob cronJob)
@@ -81,11 +82,16 @@ namespace ConsoleRunner.Quartz
                     cronJob: cronJob,
                     cancellationToken: cronJob.StopIfApplicationStopping ? context.CancellationToken : CancellationToken.None);
 
-            var (monitorTasks, monitorCancellationTokenSource) = CreateMonitorTasks(context, cronJob);
-            
-            await Task.WhenAll(monitorTasks.Append(commandTask));
+            var (_, monitorCancellationTokenSource) = CreateMonitorTasks(context, cronJob);
 
-            monitorCancellationTokenSource.Cancel();
+            try
+            {
+                await commandTask;
+            }
+            finally
+            {
+                monitorCancellationTokenSource.Cancel();
+            }
 
             return commandTask.Result;
         }
@@ -120,14 +126,7 @@ namespace ConsoleRunner.Quartz
 
         private async Task<CommandResult> Execute(CronJob cronJob, CancellationToken cancellationToken)
         {
-            var command = Command.Run(cronJob.Executable, cronJob.Arguments, options =>
-            {
-                options.CancellationToken(cancellationToken);
-                if (cronJob.Timeout != null)
-                {
-                    options.Timeout(cronJob.Timeout.Value);
-                }
-            });
+            var command = _exeExecuter.Run(cronJob.Executable, cronJob.Timeout, cancellationToken, cronJob.Arguments.Cast<object>().ToArray());
 
             return await command.Task;
         }
