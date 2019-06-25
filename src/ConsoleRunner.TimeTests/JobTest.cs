@@ -22,6 +22,7 @@ namespace ConsoleRunner.TimeTests
         public async Task Test1()
         {
             var logger = await SetupAsync(
+                logEntry => true,
                 new CronJob
                 {
                     Id = Guid.NewGuid(),
@@ -29,7 +30,7 @@ namespace ConsoleRunner.TimeTests
                     Enabled = true,
                     Executable = "ExampleExes/ConsoleRunner.ExampleExe.exe",
                     Arguments = new string[] { "3", "CRASH" },
-                    CronExpression = null, //Only run once
+                    CronExpression = $"0 0 0 1 1 ? {DateTime.Now.Year + 2}", //Never run again
                     StartImmediately = true,
                     SkipIfAlreadyRunning = true,
                     LogWarningAfter = TimeSpan.FromSeconds(1),
@@ -37,13 +38,10 @@ namespace ConsoleRunner.TimeTests
                 }
             );
 
-            while (true)
-            {
-                await logger.Semaphore.WaitAsync();
-            }
+            await logger.TaskCompletionSource.Task;
         }
 
-        private async Task<LogLogger> SetupAsync(params CronJob[] cronJobs)
+        private async Task<LogLogger> SetupAsync(Func<LogEntry, bool> searchPredicate, params CronJob[] cronJobs)
         {
             var MockCronJobsRepository = new Mock<ICronJobsRepository>();
 
@@ -68,23 +66,33 @@ namespace ConsoleRunner.TimeTests
 
             var scheduler = await schedulerFactory.GetSchedulerAsync();
 
+            var logLogger = serviceProvider.GetRequiredService<LogLogger>();
+            logLogger.SearchPredicate = searchPredicate;
+            
             await scheduler.Start();
 
-            return serviceProvider.GetRequiredService<LogLogger>();
+            return logLogger;
         }
     }
 
+    public class LogEntry
+    {
+        public DateTime Time { get; set; }
+        public LogLevel LogLevel { get; set; }
+        public string Message { get; set; }
+        public Exception Exception { get; set; }
+    }
+    
     public class LogLogger : ILogger
     {
-        public class LogEntry
+        public Func<LogEntry, bool> SearchPredicate;
+        
+        public void SetSearch(Func<LogEntry, bool> predicate)
         {
-            public DateTime Time { get; set; }
-            public LogLevel LogLevel { get; set; }
-            public string Message { get; set; }
-            public Exception Exception { get; set; }
+            SearchPredicate = predicate;
         }
-
-        public SemaphoreSlim Semaphore = new SemaphoreSlim(1);
+        
+        public TaskCompletionSource<LogEntry> TaskCompletionSource = new TaskCompletionSource<LogEntry>();
 
         public IDisposable BeginScope<TState>(TState state)
         {
@@ -98,13 +106,18 @@ namespace ConsoleRunner.TimeTests
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            Handler(new LogEntry
+            var logEntry = new LogEntry
             {
                 Time = DateTime.Now,
                 LogLevel = logLevel,
                 Message = formatter(state, exception),
                 Exception = exception
-            });
+            };
+
+            if (SearchPredicate(logEntry))
+            {
+                TaskCompletionSource.SetResult(logEntry);
+            }
         }
 
         private class NullDisposable : IDisposable
