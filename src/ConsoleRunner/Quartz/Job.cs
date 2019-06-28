@@ -24,11 +24,11 @@ namespace ConsoleRunner.Quartz
 
             if (cronJob.SkipIfAlreadyRunning && await JobIsAlreadyRunning(context))
             {
-                _logger.LogWarning($"{cronJob.Name} is already running. Skipping.");
+                _logger.LogWarning(Resources.JobIsAlreadyRunning, cronJob.Name);
                 return;
             }
 
-            _logger.LogDebug($"{cronJob.Name} starting.");
+            _logger.LogDebug(Resources.JobIsStarting, cronJob.Name);
 
             CommandResult commandResult;
             try
@@ -37,7 +37,7 @@ namespace ConsoleRunner.Quartz
             }
             catch (TimeoutException exception)
             {
-                _logger.LogError(exception, $"{cronJob.Name} timed out.");
+                _logger.LogError(exception, Resources.JobTimedOut, cronJob.Name);
                 return;
             }
             catch (Exception exception)
@@ -52,22 +52,23 @@ namespace ConsoleRunner.Quartz
                  * It’s better if the job catches all exception it may encounter, handle
                  * them, and reschedule itself, or other jobs to work around the issue.
                  */
-                _logger.LogError(exception, $"{cronJob.Name} threw an exception.");
+                _logger.LogError(exception, Resources.JobThrewAnException, cronJob.Name);
                 return;
             }
 
+            //TODO: Move detailed results to job history tracking
             if (commandResult.Success)
             {
-                var message = $"{cronJob.Name} ran successfully.";
+                var message = string.Format(Resources.JobRanSuccessfully, cronJob.Name);
                 if (!string.IsNullOrWhiteSpace(commandResult.StandardOutput))
-                {
+                {                    
                     message += $"\nStandard Output:\n{commandResult.StandardOutput.Trim('\n')}";
                 }
                 _logger.LogInformation(message);
             }
             else
             {
-                var message = $"{cronJob.Name} returned an non-zero exit code [{commandResult.ExitCode}].";
+                var message = string.Format(Resources.JobErrored, cronJob.Name, commandResult.ExitCode);
                 if (!string.IsNullOrWhiteSpace(commandResult.StandardError))
                 {
                     message += $"\nStandard Error:\n{commandResult.StandardError.Trim('\n')}";
@@ -104,11 +105,11 @@ namespace ConsoleRunner.Quartz
             {
                 CreateDurationMonitorTask(
                     duration: cronJob.LogWarningAfter,
-                    action: () => _logger.LogWarning($"{cronJob.Name} is running longer than specified."),
+                    action: () => _logger.LogWarning(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name),
                     cancellationToken: cancellationTokenSource.Token),
                 CreateDurationMonitorTask(
                     duration: cronJob.LogErrorAfter,
-                    action: () => _logger.LogError($"{cronJob.Name} is running longer than specified."),
+                    action: () => _logger.LogError(Resources.JobIsRunningLongerThanExpectedError, cronJob.Name),
                     cancellationToken: cancellationTokenSource.Token)
             };
 
