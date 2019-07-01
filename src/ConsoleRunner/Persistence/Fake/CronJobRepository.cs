@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 
 namespace ConsoleRunner.Persistence.Fake
 {
-    public class CronJobsRepository : ICronJobsRepository
+    public class FakeRepository : ICronJobRepository
     {
-        public async Task<IEnumerable<CronJob>> GetJobsAsync()
+        public async Task<IEnumerable<CronJob>> GetCronJobsAsync()
         {
             var jobs = new List<CronJob>
             {

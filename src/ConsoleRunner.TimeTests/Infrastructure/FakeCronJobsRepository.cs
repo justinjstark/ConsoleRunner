@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace ConsoleRunner.TimeTests.Infrastructure
 {
-    public class FakeCronJobsRepository : ICronJobsRepository
+    public class FakeCronJobsRepository : ICronJobRepository
     {
         public List<CronJob> CronJobs { get; set; }
 
@@ -13,7 +13,7 @@ namespace ConsoleRunner.TimeTests.Infrastructure
             CronJobs = cronJobs;
         }
 
-        public Task<IEnumerable<CronJob>> GetJobsAsync()
+        public Task<IEnumerable<CronJob>> GetCronJobsAsync()
         {
             return Task.FromResult((IEnumerable<CronJob>)CronJobs);
         }

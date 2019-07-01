@@ -1,12 +1,11 @@
-﻿using Shouldly;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace ConsoleRunner.TimeTests.Infrastructure
 {
     public static class TaskExtensions
     {
-        public static async Task WithTimeout(this Task task, TimeSpan timeout)
+        public static async Task WithTimeout(this Task task, TimeSpan timeout, bool throwOnTimeout = true)
         {
             if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
             {
@@ -14,19 +13,10 @@ namespace ConsoleRunner.TimeTests.Infrastructure
             }
             else
             {
-                throw new TimeoutException();
-            }
-        }
-
-        public static async Task<T> WithTimeout<T>(this Task<T> task, TimeSpan timeout)
-        {
-            if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
-            {
-                return await task;
-            }
-            else
-            {
-                throw new TimeoutException();
+                if (throwOnTimeout)
+                {
+                    throw new TimeoutException();
+                }
             }
         }
     }

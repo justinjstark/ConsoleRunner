@@ -1,5 +1,5 @@
-﻿using System;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+﻿using Microsoft.Extensions.Logging;
+using System;
 
 namespace ConsoleRunner.TimeTests.Infrastructure
 {

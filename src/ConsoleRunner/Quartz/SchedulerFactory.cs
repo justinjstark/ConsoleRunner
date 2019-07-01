@@ -16,9 +16,9 @@ namespace ConsoleRunner.Quartz
     {
         private readonly ILogProvider _logProvider;
         private readonly IJobFactory _jobFactory;
-        private readonly ICronJobsRepository _cronJobsRepository;
+        private readonly ICronJobRepository _cronJobsRepository;
 
-        public SchedulerFactory(ILogProvider logProvider, IJobFactory jobFactory, ICronJobsRepository cronJobsRepository)
+        public SchedulerFactory(ILogProvider logProvider, IJobFactory jobFactory, ICronJobRepository cronJobsRepository)
         {
             _logProvider = logProvider;
             _jobFactory = jobFactory;
@@ -47,9 +47,9 @@ namespace ConsoleRunner.Quartz
             return scheduler;
         }
 
-        private static async Task ScheduleJobsAsync(IScheduler scheduler, ICronJobsRepository jobsRepository)
+        private static async Task ScheduleJobsAsync(IScheduler scheduler, ICronJobRepository jobsRepository)
         {
-            var jobs = (await jobsRepository.GetJobsAsync())
+            var jobs = (await jobsRepository.GetCronJobsAsync())
                 .Where(cj => cj.Enabled);
 
             foreach (var job in jobs)

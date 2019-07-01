@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 
 namespace ConsoleRunner.Persistence
 {
-    public interface ICronJobsRepository
+    public interface ICronJobRepository
     {
-        Task<IEnumerable<CronJob>> GetJobsAsync();
+        Task<IEnumerable<CronJob>> GetCronJobsAsync();
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Nito.AsyncEx;
 using System;
-using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -8,15 +8,12 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 {
     public class FakeLogger : ILogger
     {
-        public Func<LogEntry, ConcurrentBag<LogEntry>, bool> LogEntriesPredicate;
-        public ConcurrentBag<LogEntry> LogEntries = new ConcurrentBag<LogEntry>();
+        public readonly AsyncProducerConsumerQueue<object> _queue;
 
-        public FakeLogger(Func<LogEntry, ConcurrentBag<LogEntry>, bool> logEntriesPredicate)
+        public FakeLogger(AsyncProducerConsumerQueue<object> queue)
         {
-            LogEntriesPredicate = logEntriesPredicate;
+            _queue = queue;
         }        
-
-        public TaskCompletionSource<LogEntry> TaskCompletionSource = new TaskCompletionSource<LogEntry>();
 
         public IDisposable BeginScope<TState>(TState state)
         {
@@ -30,20 +27,14 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            var logEntry = new LogEntry
+            _queue.Enqueue(new LogEntry
             {
                 Time = DateTime.Now,
                 LogLevel = logLevel,
                 Message = formatter(state, exception),
-                Exception = exception
-            };
-
-            LogEntries.Add(logEntry);
-            
-            if (LogEntriesPredicate != null && LogEntriesPredicate(logEntry, LogEntries))
-            {
-                TaskCompletionSource.TrySetResult(logEntry);
-            }
+                Exception = exception,
+                NextTaskCompletionSource = new TaskCompletionSource<LogEntry>()
+            });
         }
 
         private class NullDisposable : IDisposable

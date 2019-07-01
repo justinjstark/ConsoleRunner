@@ -49,7 +49,7 @@ namespace ConsoleRunner
                 //config.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
             });
             services.AddTransient<Job>();
-            services.AddTransient<ICronJobsRepository, Persistence.Fake.CronJobsRepository>();
+            services.AddTransient<ICronJobRepository, Persistence.Fake.FakeRepository>();
 
             return services.BuildServiceProvider();
         }        
