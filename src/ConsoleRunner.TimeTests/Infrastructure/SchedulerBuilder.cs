@@ -81,6 +81,13 @@ namespace ConsoleRunner.TimeTests.Infrastructure
             return this;
         }
 
+        public SchedulerBuilder ShouldRunCommandMoreThanOnce(string executable)
+        {
+            _commandsPredicate = commandsRun => commandsRun.Where(cr => cr.Executable == executable).Count() > 1;
+
+            return this;
+        }
+
         public SchedulerBuilder WithTimeout(TimeSpan timeout, bool throwOnTimeout = true)
         {
             _timeout = timeout;

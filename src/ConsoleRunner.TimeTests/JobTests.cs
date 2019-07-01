@@ -141,14 +141,11 @@ namespace ConsoleRunner.TimeTests
                 skipIfAlreadyRunning: false
             );
 
-            var scheduler = new SchedulerBuilder()
+            await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .WithTimeout(TimeSpan.FromSeconds(3), false);
-
-            await scheduler.RunAsync();
-
-            scheduler.Commands.Where(c => c.Executable == cronJob.Executable)
-                .Count().ShouldBeGreaterThan(1);
+                .WithTimeout(TimeSpan.FromSeconds(3), false)
+                .ShouldRunCommandMoreThanOnce(cronJob.Executable)
+                .RunAsync();
         }
     }
 }

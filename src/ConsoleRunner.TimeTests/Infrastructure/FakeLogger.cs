@@ -32,8 +32,7 @@ namespace ConsoleRunner.TimeTests.Infrastructure
                 Time = DateTime.Now,
                 LogLevel = logLevel,
                 Message = formatter(state, exception),
-                Exception = exception,
-                NextTaskCompletionSource = new TaskCompletionSource<LogEntry>()
+                Exception = exception
             });
         }
 
