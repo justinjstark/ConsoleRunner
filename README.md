@@ -5,11 +5,11 @@ This is a work in progress. The goal is to build a CRON scheduler to launch cons
 
 Features:
 - [x] Service resolution of job dependencies
-- [x] Per-job dependency resolution scoping
+- [x] Per-job-run dependency resolution scoping
 - [x] Scheduling jobs via CRON expressions
 - [x] Allow jobs to run on startup
 - [x] Allow jobs to skip running if they are already running
-- [x] Quartz ShutdownHook plugin
+- [x] Graceful shutdown with Quartz ShutdownHook plugin
 - [x] Log with Microsoft.Extensions.Logging
 - [x] Run console applications
 - [x] Track run results (exit code, STDOUT, and STDERR)
