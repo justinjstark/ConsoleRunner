@@ -6,35 +6,36 @@ using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using Quartz.Logging;
 using Quartz.Spi;
+using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace ConsoleRunner.TimeTests.Infrastructure
 {
+
     public class SchedulerBuilder
     {
         //Begin Setup Variables
         private readonly List<CronJob> _cronJobs = new List<CronJob>();
         
-        private TimeSpan? _timeout;
+        private TimeSpan _stopAfter = TimeSpan.FromSeconds(5);
 
-        private bool _throwOnTimeout = true;
+        private List<Expression<Func<LogEntry, bool>>> _logEntryPredicates = new List<Expression<Func<LogEntry, bool>>>();
 
-        private Func<LogEntry, bool> _logEntryPredicate;
+        private List<Func<LogEntry, bool>> _compiledLogEntryPredicates = new List<Func<LogEntry, bool>>();
 
-        private Func<List<LogEntry>, bool> _logEntriesPredicate;
+        private List<Expression<Func<Command, bool>>> _commandPredicates = new List<Expression<Func<Command, bool>>>();
 
-        private Func<Command, bool> _commandPredicate;
-
-        private Func<List<Command>, bool> _commandsPredicate;
+        private List<Func<Command, bool>> _compiledCommandPredicates = new List<Func<Command, bool>>();
         //End Setup Variables
 
         //Begin Run Variables
         private readonly AsyncProducerConsumerQueue<object> _queue = new AsyncProducerConsumerQueue<object>();
 
-        public readonly List<LogEntry> LogEntries = new List<LogEntry>();        
+        public readonly List<LogEntry> LogEntries = new List<LogEntry>();
 
         public readonly List<Command> Commands = new List<Command>();
         //End Run Variables
@@ -46,52 +47,30 @@ namespace ConsoleRunner.TimeTests.Infrastructure
             return this;
         }
 
-        public SchedulerBuilder ShouldWriteErrorLogEntry<T>() where T : Exception
+        public SchedulerBuilder ShouldLog(Expression<Func<LogEntry, bool>> predicate)
         {
-            _logEntryPredicate = logEntry => logEntry.Exception is T;
+            _logEntryPredicates.Add(predicate);
+            _compiledLogEntryPredicates.Add(predicate.Compile());
 
             return this;
         }
 
-        public SchedulerBuilder ShouldWriteLogEntry(Func<LogEntry, bool> predicate)
+        public SchedulerBuilder ShouldFireCommand(Expression<Func<Command, bool>> predicate)
         {
-            _logEntryPredicate = predicate;
+            _commandPredicates.Add(predicate);
+            _compiledCommandPredicates.Add(predicate.Compile());
 
             return this;
         }
 
-        public SchedulerBuilder ShouldRunCommand(Func<Command, bool> predicate)
+        public SchedulerBuilder ShouldFireCommand(string executable)
         {
-            _commandPredicate = predicate;
-
-            return this;
+            return ShouldFireCommand(c => c.Executable == executable);
         }
 
-        public SchedulerBuilder ShouldRunCommands(Func<List<Command>, bool> predicate)
+        public SchedulerBuilder StopAfter(TimeSpan timeout)
         {
-            _commandsPredicate = predicate;
-
-            return this;
-        }
-
-        public SchedulerBuilder ShouldRunAllCommands(params string[] executables)
-        {
-            _commandsPredicate = commandsRun => executables.Except(commandsRun.Select(cr => cr.Executable)).Count() == 0;
-
-            return this;
-        }
-
-        public SchedulerBuilder ShouldRunCommandMoreThanOnce(string executable)
-        {
-            _commandsPredicate = commandsRun => commandsRun.Where(cr => cr.Executable == executable).Count() > 1;
-
-            return this;
-        }
-
-        public SchedulerBuilder WithTimeout(TimeSpan timeout, bool throwOnTimeout = true)
-        {
-            _timeout = timeout;
-            _throwOnTimeout = throwOnTimeout;
+            _stopAfter = timeout;
 
             return this;
         }
@@ -104,12 +83,28 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 
             var task = WaitUntilAllConditionsAreMet();
 
-            if(_timeout != null)
+            if(_stopAfter != null)
             {
-                task = task.WithTimeout(_timeout.Value, _throwOnTimeout);
+                task = task.WithTimeout(_stopAfter);
             }
 
-            await task;
+            var timedOut = await StopAfter(task, _stopAfter);
+
+            var allConditions = new List<Action>
+            {
+                () => timedOut.ShouldBeFalse()
+            }
+            .Union(_logEntryPredicates.Select<Expression<Func<LogEntry, bool>>, Action>(
+                p => () => LogEntries.ShouldContain(p)))
+            .Union(_commandPredicates.Select<Expression<Func<Command, bool>>, Action>(
+                p => () => Commands.ShouldContain(p)));
+
+            this.ShouldSatisfyAllConditions(allConditions.ToArray());
+        }
+
+        private async Task<bool> StopAfter(Task task, TimeSpan timeout)
+        {
+            return await Task.WhenAny(task, Task.Delay(timeout)) != task;
         }
 
         private async Task WaitUntilAllConditionsAreMet()
@@ -133,26 +128,8 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 
         private bool AllConditionsAreMet(object e)
         {
-            if(_logEntryPredicate == null && _logEntriesPredicate == null
-                && _commandPredicate == null && _commandsPredicate == null)
-            {
-                return false;
-            }
-
-            var logEntryCondition = _logEntryPredicate == null ||
-                (e is LogEntry && _logEntryPredicate((LogEntry)e));
-
-            var logEntriesCondition = _logEntriesPredicate == null ||
-                _logEntriesPredicate(LogEntries);
-
-            var commandCondition = _commandPredicate == null ||
-                (e is Command && _commandPredicate((Command)e));
-
-            var commandsCondition = _commandsPredicate == null ||
-                _commandsPredicate(Commands);
-
-            return logEntryCondition && logEntriesCondition
-                && commandCondition && commandsCondition;
+            return _compiledLogEntryPredicates.All(p => p(LogEntries))
+                && _compiledCommandPredicates.All(p => p(Commands));
         }
 
         private IServiceProvider BuildServiceProvider()

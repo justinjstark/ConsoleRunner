@@ -21,11 +21,16 @@ namespace ConsoleRunner.TimeTests
                 logWarningAfter: TimeSpan.FromSeconds(1)
             );
 
-            await new SchedulerBuilder()
-                .WithCronJobs(cronJob)                
-                .WithTimeout(TimeSpan.FromSeconds(5))
-                .ShouldWriteLogEntry(le => le.LogLevel == LogLevel.Warning && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name))
+            var result = await new SchedulerBuilder()
+                .WithCronJobs(cronJob)
+                .ShouldStopWhen((le, _) => le.LogLevel == LogLevel.Warning && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name))
                 .RunAsync();
+
+            result.ShouldSatisfyAllConditions(() =>
+            {
+                result.TimedOut.ShouldBeFalse();
+                result.LogEntries.ShouldContain(le => le.LogLevel == LogLevel.Warning && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name))
+            });
         }
 
         [Fact]
@@ -40,8 +45,8 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .WithTimeout(TimeSpan.FromSeconds(5))
-                .ShouldWriteLogEntry(le => le.LogLevel == LogLevel.Error && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedError, cronJob.Name))
+                .StopAfter(TimeSpan.FromSeconds(5))
+                .StopOnLogEntry(le => le.LogLevel == LogLevel.Error && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedError, cronJob.Name))
                 .RunAsync();
         }
 
@@ -55,8 +60,8 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .WithTimeout(TimeSpan.FromSeconds(5))
-                .ShouldRunCommand(command => command.Executable == cronJob.Executable)
+                .StopAfter(TimeSpan.FromSeconds(5))
+                .StopOnCommand(command => command.Executable == cronJob.Executable)
                 .RunAsync();
         }
 
@@ -70,8 +75,8 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .WithTimeout(TimeSpan.FromSeconds(2))
-                .ShouldRunCommand(command => command.Executable == cronJob.Executable)
+                .StopAfter(TimeSpan.FromSeconds(2))
+                .StopOnCommand(command => command.Executable == cronJob.Executable)
                 .RunAsync()
                 .ShouldThrowAsync<TimeoutException>();
         }
@@ -91,8 +96,8 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob1, cronJob2)
-                .WithTimeout(TimeSpan.FromSeconds(3))
-                .ShouldRunAllCommands()
+                .StopAfter(TimeSpan.FromSeconds(3))
+                .StopOnCommand()
                 .RunAsync();
         }
 
@@ -106,8 +111,8 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .WithTimeout(TimeSpan.FromSeconds(3))
-                .ShouldRunCommands(commands => commands.Count > 1)
+                .StopAfter(TimeSpan.FromSeconds(3))
+                .StopOnCommand(commands => commands.Count > 1)
                 .RunAsync();
         }
 
@@ -123,7 +128,7 @@ namespace ConsoleRunner.TimeTests
 
             var scheduler = new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .WithTimeout(TimeSpan.FromSeconds(3), false);
+                .StopAfter(TimeSpan.FromSeconds(3), false);
 
             await scheduler.RunAsync();
 
@@ -143,8 +148,8 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .WithTimeout(TimeSpan.FromSeconds(3), false)
-                .ShouldRunCommandMoreThanOnce(cronJob.Executable)
+                .StopAfter(TimeSpan.FromSeconds(3), false)
+                .StopOnMultipleCommands(cronJob.Executable)
                 .RunAsync();
         }
     }
