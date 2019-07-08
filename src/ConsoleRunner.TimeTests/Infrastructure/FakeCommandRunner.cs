@@ -7,7 +7,7 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 {
     public class FakeCommandRunner : ICommandRunner
     {
-        public readonly AsyncProducerConsumerQueue<object> _queue;
+        private readonly AsyncProducerConsumerQueue<object> _queue;
 
         public FakeCommandRunner(AsyncProducerConsumerQueue<object> queue)
         {

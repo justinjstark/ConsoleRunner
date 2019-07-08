@@ -19,14 +19,4 @@
     <ProjectReference Include="..\ConsoleRunner\ConsoleRunner.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ExampleExes\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="ExampleExes\ConsoleRunner.ExampleExe.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

@@ -13,31 +13,18 @@ using System.Threading.Tasks;
 
 namespace ConsoleRunner.TimeTests.Infrastructure
 {
+
     public class SchedulerBuilder
     {
-        //Begin Setup Variables
         private readonly List<CronJob> _cronJobs = new List<CronJob>();
         
-        private TimeSpan? _timeout;
-
-        private bool _throwOnTimeout = true;
-
-        private Func<LogEntry, bool> _logEntryPredicate;
-
-        private Func<List<LogEntry>, bool> _logEntriesPredicate;
-
-        private Func<Command, bool> _commandPredicate;
-
-        private Func<List<Command>, bool> _commandsPredicate;
-        //End Setup Variables
-
-        //Begin Run Variables
+        private TimeSpan _stopAfter = TimeSpan.FromSeconds(5);
+        
+        private Func<TestResult, bool> _stopWhen;
+        
         private readonly AsyncProducerConsumerQueue<object> _queue = new AsyncProducerConsumerQueue<object>();
 
-        public readonly List<LogEntry> LogEntries = new List<LogEntry>();        
-
-        public readonly List<Command> Commands = new List<Command>();
-        //End Run Variables
+        private readonly TestResult _testResult = new TestResult();
         
         public SchedulerBuilder WithCronJobs(params CronJob[] cronJobs)
         {
@@ -46,57 +33,35 @@ namespace ConsoleRunner.TimeTests.Infrastructure
             return this;
         }
 
-        public SchedulerBuilder ShouldWriteErrorLogEntry<T>() where T : Exception
+        public SchedulerBuilder StopWhen(Func<TestResult, bool> predicate)
         {
-            _logEntryPredicate = logEntry => logEntry.Exception is T;
+            _stopWhen = predicate;
 
             return this;
         }
 
-        public SchedulerBuilder ShouldWriteLogEntry(Func<LogEntry, bool> predicate)
+        public SchedulerBuilder StopWhen(Func<LogEntry, bool> predicate)
         {
-            _logEntryPredicate = predicate;
+            _stopWhen = testResult => testResult.LogEntries.Any(predicate);
 
             return this;
         }
 
-        public SchedulerBuilder ShouldRunCommand(Func<Command, bool> predicate)
+        public SchedulerBuilder StopWhen(Func<Command, bool> predicate)
         {
-            _commandPredicate = predicate;
+            _stopWhen = testResult => testResult.Commands.Any(predicate);
 
             return this;
         }
 
-        public SchedulerBuilder ShouldRunCommands(Func<List<Command>, bool> predicate)
+        public SchedulerBuilder StopAfter(TimeSpan timeout)
         {
-            _commandsPredicate = predicate;
+            _stopAfter = timeout;
 
             return this;
         }
 
-        public SchedulerBuilder ShouldRunAllCommands(params string[] executables)
-        {
-            _commandsPredicate = commandsRun => executables.Except(commandsRun.Select(cr => cr.Executable)).Count() == 0;
-
-            return this;
-        }
-
-        public SchedulerBuilder ShouldRunCommandMoreThanOnce(string executable)
-        {
-            _commandsPredicate = commandsRun => commandsRun.Where(cr => cr.Executable == executable).Count() > 1;
-
-            return this;
-        }
-
-        public SchedulerBuilder WithTimeout(TimeSpan timeout, bool throwOnTimeout = true)
-        {
-            _timeout = timeout;
-            _throwOnTimeout = throwOnTimeout;
-
-            return this;
-        }
-
-        public async Task RunAsync()
+        public async Task<TestResult> RunAsync()
         {
             var serviceProvider = BuildServiceProvider();
 
@@ -104,55 +69,44 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 
             var task = WaitUntilAllConditionsAreMet();
 
-            if(_timeout != null)
+            bool timedOut = false;
+            if(_stopAfter != null)
             {
-                task = task.WithTimeout(_timeout.Value, _throwOnTimeout);
+                timedOut = await WithTimeout(task, _stopAfter);
+            }
+            else
+            {
+                await task;
             }
 
-            await task;
+            if(timedOut)
+            {
+                _testResult.TimedOut = true;
+            }
+
+            return _testResult;
+        }
+
+        private async Task<bool> WithTimeout(Task task, TimeSpan timeout)
+        {
+            return await Task.WhenAny(task, Task.Delay(timeout)) != task;
         }
 
         private async Task WaitUntilAllConditionsAreMet()
         {
-            while(true)
+            while(_stopWhen == null || !_stopWhen(_testResult))
             {
                 var e = await _queue.DequeueAsync();
 
-                if(e is LogEntry)
+                if (e is LogEntry)
                 {
-                    LogEntries.Add((LogEntry)e);
+                    _testResult.LogEntries.Add((LogEntry)e);
                 }
-                else if(e is Command)
+                else if (e is Command)
                 {
-                    Commands.Add((Command)e);
+                    _testResult.Commands.Add((Command)e);
                 }
-
-                if (AllConditionsAreMet(e)) break;
             }
-        }
-
-        private bool AllConditionsAreMet(object e)
-        {
-            if(_logEntryPredicate == null && _logEntriesPredicate == null
-                && _commandPredicate == null && _commandsPredicate == null)
-            {
-                return false;
-            }
-
-            var logEntryCondition = _logEntryPredicate == null ||
-                (e is LogEntry && _logEntryPredicate((LogEntry)e));
-
-            var logEntriesCondition = _logEntriesPredicate == null ||
-                _logEntriesPredicate(LogEntries);
-
-            var commandCondition = _commandPredicate == null ||
-                (e is Command && _commandPredicate((Command)e));
-
-            var commandsCondition = _commandsPredicate == null ||
-                _commandsPredicate(Commands);
-
-            return logEntryCondition && logEntriesCondition
-                && commandCondition && commandsCondition;
         }
 
         private IServiceProvider BuildServiceProvider()

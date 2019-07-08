@@ -4,16 +4,16 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 {
     public class FakeLogProvider : ILoggerProvider
     {
-        public readonly ILogger Logger;
+        private readonly ILogger _logger;
 
         public FakeLogProvider(ILogger logger)
         {
-            Logger = logger;
+            _logger = logger;
         }
 
         public ILogger CreateLogger(string categoryName)
         {
-            return Logger;
+            return _logger;
         }
 
         public void Dispose()

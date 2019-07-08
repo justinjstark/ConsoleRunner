@@ -6,16 +6,16 @@ namespace ConsoleRunner.TimeTests.Infrastructure
 {
     public class FakeCronJobsRepository : ICronJobRepository
     {
-        public List<CronJob> CronJobs { get; set; }
+        private List<CronJob> _cronJobs { get; set; }
 
         public FakeCronJobsRepository(List<CronJob> cronJobs)
         {
-            CronJobs = cronJobs;
+            _cronJobs = cronJobs;
         }
 
         public Task<IEnumerable<CronJob>> GetCronJobsAsync()
         {
-            return Task.FromResult((IEnumerable<CronJob>)CronJobs);
+            return Task.FromResult((IEnumerable<CronJob>)_cronJobs);
         }
     }
 }

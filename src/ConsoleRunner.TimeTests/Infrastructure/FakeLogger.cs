@@ -1,19 +1,18 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nito.AsyncEx;
 using System;
-using System.Threading.Tasks;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace ConsoleRunner.TimeTests.Infrastructure
 {
     public class FakeLogger : ILogger
     {
-        public readonly AsyncProducerConsumerQueue<object> _queue;
+        private readonly AsyncProducerConsumerQueue<object> _queue;
 
         public FakeLogger(AsyncProducerConsumerQueue<object> queue)
         {
             _queue = queue;
-        }        
+        }
 
         public IDisposable BeginScope<TState>(TState state)
         {
