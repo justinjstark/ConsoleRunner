@@ -3,7 +3,6 @@ using ConsoleRunner.TimeTests.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -21,16 +20,10 @@ namespace ConsoleRunner.TimeTests
                 logWarningAfter: TimeSpan.FromSeconds(1)
             );
 
-            var result = await new SchedulerBuilder()
+            await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .ShouldStopWhen((le, _) => le.LogLevel == LogLevel.Warning && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name))
+                .ShouldLog(le => le.LogLevel == LogLevel.Warning && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name))
                 .RunAsync();
-
-            result.ShouldSatisfyAllConditions(() =>
-            {
-                result.TimedOut.ShouldBeFalse();
-                result.LogEntries.ShouldContain(le => le.LogLevel == LogLevel.Warning && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedWarning, cronJob.Name))
-            });
         }
 
         [Fact]
@@ -39,14 +32,13 @@ namespace ConsoleRunner.TimeTests
             var cronJob = CronJobBuilder.With(
                 startImmediately: true,
                 cronExpression: CronExpression.Never,
-                arguments: CommandArguments.CommandDurationInSeconds(3),                
-                logErrorAfter: TimeSpan.FromSeconds(2)                
+                arguments: CommandArguments.CommandDurationInSeconds(3),
+                logErrorAfter: TimeSpan.FromSeconds(2)
             );
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .StopAfter(TimeSpan.FromSeconds(5))
-                .StopOnLogEntry(le => le.LogLevel == LogLevel.Error && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedError, cronJob.Name))
+                .ShouldLog(le => le.LogLevel == LogLevel.Error && le.Message == string.Format(Resources.JobIsRunningLongerThanExpectedError, cronJob.Name))
                 .RunAsync();
         }
 
@@ -60,8 +52,7 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .StopAfter(TimeSpan.FromSeconds(5))
-                .StopOnCommand(command => command.Executable == cronJob.Executable)
+                .ShouldRunCommand(cronJob.Executable)
                 .RunAsync();
         }
 
@@ -75,10 +66,8 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .StopAfter(TimeSpan.FromSeconds(2))
-                .StopOnCommand(command => command.Executable == cronJob.Executable)
-                .RunAsync()
-                .ShouldThrowAsync<TimeoutException>();
+                .ShouldTimeout()
+                .RunAsync();
         }
 
         [Fact]
@@ -96,8 +85,7 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob1, cronJob2)
-                .StopAfter(TimeSpan.FromSeconds(3))
-                .StopOnCommand()
+                .ShouldRunCommands(cronJob1.Executable, cronJob2.Executable)
                 .RunAsync();
         }
 
@@ -111,46 +99,49 @@ namespace ConsoleRunner.TimeTests
 
             await new SchedulerBuilder()
                 .WithCronJobs(cronJob)
-                .StopAfter(TimeSpan.FromSeconds(3))
-                .StopOnCommand(commands => commands.Count > 1)
+                //StopWhen
+                .Should(result => result.Commands.Count.ShouldBeGreaterThan(1))
                 .RunAsync();
+            //return TestResult
+
+            //Assert here ???
         }
 
-        [Fact]
-        public async Task skip_already_running_job()
-        {
-            var cronJob = CronJobBuilder.With(
-                startImmediately: true,
-                cronExpression: CronExpression.EveryOneSecond,
-                arguments: CommandArguments.CommandDurationInSeconds(5),
-                skipIfAlreadyRunning: true
-            );
+        //[Fact]
+        //public async Task skip_already_running_job()
+        //{
+        //    var cronJob = CronJobBuilder.With(
+        //        startImmediately: true,
+        //        cronExpression: CronExpression.EveryOneSecond,
+        //        arguments: CommandArguments.CommandDurationInSeconds(5),
+        //        skipIfAlreadyRunning: true
+        //    );
 
-            var scheduler = new SchedulerBuilder()
-                .WithCronJobs(cronJob)
-                .StopAfter(TimeSpan.FromSeconds(3), false);
+        //    var scheduler = new SchedulerBuilder()
+        //        .WithCronJobs(cronJob)
+        //        .StopAfter(TimeSpan.FromSeconds(3), false);
 
-            await scheduler.RunAsync();
+        //    await scheduler.RunAsync();
 
-            scheduler.Commands.Where(c => c.Executable == cronJob.Executable)
-                .Count().ShouldBe(1);
-        }
+        //    scheduler.Commands.Where(c => c.Executable == cronJob.Executable)
+        //        .Count().ShouldBe(1);
+        //}
 
-        [Fact]
-        public async Task run_the_same_job_concurrently()
-        {
-            var cronJob = CronJobBuilder.With(
-                startImmediately: true,
-                cronExpression: CronExpression.EveryOneSecond,
-                arguments: CommandArguments.CommandDurationInSeconds(5),
-                skipIfAlreadyRunning: false
-            );
+        //[Fact]
+        //public async Task run_the_same_job_concurrently()
+        //{
+        //    var cronJob = CronJobBuilder.With(
+        //        startImmediately: true,
+        //        cronExpression: CronExpression.EveryOneSecond,
+        //        arguments: CommandArguments.CommandDurationInSeconds(5),
+        //        skipIfAlreadyRunning: false
+        //    );
 
-            await new SchedulerBuilder()
-                .WithCronJobs(cronJob)
-                .StopAfter(TimeSpan.FromSeconds(3), false)
-                .StopOnMultipleCommands(cronJob.Executable)
-                .RunAsync();
-        }
+        //    await new SchedulerBuilder()
+        //        .WithCronJobs(cronJob)
+        //        .StopAfter(TimeSpan.FromSeconds(3), false)
+        //        .StopOnMultipleCommands(cronJob.Executable)
+        //        .RunAsync();
+        //}
     }
 }
