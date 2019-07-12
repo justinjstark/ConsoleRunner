@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 
 namespace ConsoleRunner.TimeTests.Infrastructure
 {
     public class TestResult
     {
-        public List<LogEntry> LogEntries { get; set; }
+        public ConcurrentBag<LogEntry> LogEntries { get; set; } = new ConcurrentBag<LogEntry>();
 
-        public List<Command> Commands { get; set; }
+        public ConcurrentBag<Command> Commands { get; set; } = new ConcurrentBag<Command>();
 
         public bool TimedOut { get; set; }
     }
