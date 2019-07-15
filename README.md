@@ -1,5 +1,5 @@
-# ConsoleRunner
-A simple CRON scheduler using .NET Core and Quartz.NET
+# NachoCron
+A CRON scheduler using .NET Core and Quartz.NET
 
 This is a work in progress. The goal is to build a CRON scheduler to launch console applications using .NET Core, Quartz.NET, Dependency Injection with appropriate scoping, Entity Framework for schedule persistence and run history, logging, and be able to install it as a windows service.
 
