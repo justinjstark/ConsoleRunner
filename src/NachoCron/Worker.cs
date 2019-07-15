@@ -34,7 +34,7 @@ namespace NachoCron
             _logger.LogInformation(Resources.ServiceStopped);
         }
 
-        private async Task UntilCancelled(CancellationToken stoppingToken)
+        private static async Task UntilCancelled(CancellationToken stoppingToken)
         {
             var tcs = new TaskCompletionSource<object>();
 
