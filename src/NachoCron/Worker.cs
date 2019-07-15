@@ -25,22 +25,13 @@ namespace NachoCron
 
             await scheduler.Start(CancellationToken.None);
 
-            await UntilCancelled(stoppingToken);
+            await Task.Delay(Timeout.Infinite, stoppingToken);
 
             _logger.LogInformation(Resources.ServiceStopping);
 
             await scheduler.Shutdown(CancellationToken.None);
 
             _logger.LogInformation(Resources.ServiceStopped);
-        }
-
-        private static async Task UntilCancelled(CancellationToken stoppingToken)
-        {
-            var tcs = new TaskCompletionSource<object>();
-
-            using var subscription = stoppingToken.Register(() => tcs.SetResult(null));
-
-            await tcs.Task;
         }
     }
 }
