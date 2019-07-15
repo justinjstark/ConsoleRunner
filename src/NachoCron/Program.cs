@@ -1,57 +1,39 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NachoCron.CommandRunners.MedallionShell;
 using NachoCron.Logging;
 using NachoCron.Persistence;
 using NachoCron.Quartz;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Quartz.Logging;
 using Quartz.Spi;
 
 namespace NachoCron
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            Run().GetAwaiter().GetResult();
+            CreateHostBuilder(args).Build().Run();
         }
 
-        private static async Task Run()
-        {
-            var serviceProvider = ConfigureServices();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .UseWindowsService()
+                .ConfigureLogging(logging =>
+                {
+                    logging.AddEventLog();
+                })
+                .ConfigureServices(services =>
+                {
+                    services.AddHostedService<Worker>();
 
-            var schedulerFactory = serviceProvider.GetRequiredService<SchedulerFactory>();
-
-            var scheduler = await schedulerFactory.GetSchedulerAsync();
-            
-            await scheduler.Start(CancellationToken.None);
-
-            await Console.In.ReadLineAsync();
-
-            await scheduler.Shutdown(CancellationToken.None);
-        }
-
-        private static IServiceProvider ConfigureServices()
-        {
-            //Services
-            var services = new ServiceCollection();
-
-            services.AddLogging(config => config.AddConsole());
-            services.AddSingleton<SchedulerFactory>();
-            services.AddTransient<IJobFactory, ScopedJobFactory>();
-            services.AddTransient<ICommandRunner, MedallionCommandRunner>();
-            services.AddSingleton<ILogProvider, MicrosoftLibLogWrapper>();
-            services.AddLogging(config => {
-                config.AddConsole();
-                //config.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-            });
-            services.AddTransient<Job>();
-            services.AddTransient<ICronJobRepository, Persistence.Fake.FakeRepository>();
-
-            return services.BuildServiceProvider();
-        }        
+                    services.AddSingleton<SchedulerFactory>();
+                    services.AddTransient<IJobFactory, ScopedJobFactory>();
+                    services.AddTransient<ICommandRunner, MedallionCommandRunner>();
+                    services.AddSingleton<ILogProvider, MicrosoftLibLogWrapper>();
+                    services.AddTransient<Job>();
+                    services.AddTransient<ICronJobRepository, Persistence.Fake.FakeRepository>();
+                });
     }
 }

@@ -15,11 +15,11 @@ Features:
 - [x] Track run results (exit code, STDOUT, and STDERR)
 - [x] Per-app timeouts
 - [x] Long-running job warnings (configurable per job)
-- [ ] Ability to install as a Windows Service
+- [x] .NET Core 3 (Currently Preview 6)
+- [x] Ability to install as a Windows Service (using .NET Core 3 Service Worker)
 - [ ] Job queue tracking and warnings
 - [ ] Long-running job warnings (automatic based on job run history)
 - [ ] EntityFramework job store
 - [ ] EntityFramework run-history store
 - [ ] Web management interface
 - [ ] API / Observables for realtime job tracking
-- [ ] .NET Core 3

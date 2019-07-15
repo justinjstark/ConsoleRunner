@@ -131,5 +131,32 @@ namespace NachoCron {
                 return ResourceManager.GetString("JobTimedOut", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starting NachoCron.
+        /// </summary>
+        public static string ServiceStarting {
+            get {
+                return ResourceManager.GetString("ServiceStarting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopped NachoCron.
+        /// </summary>
+        public static string ServiceStopped {
+            get {
+                return ResourceManager.GetString("ServiceStopped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopping NachoCron.
+        /// </summary>
+        public static string ServiceStopping {
+            get {
+                return ResourceManager.GetString("ServiceStopping", resourceCulture);
+            }
+        }
     }
 }

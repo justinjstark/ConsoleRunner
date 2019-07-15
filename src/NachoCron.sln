@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29009.5
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NachoCron", "NachoCron\NachoCron.csproj", "{C5481212-F651-4E2B-B775-D49EBF303E2B}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NachoCron.ExampleExe", "NachoCron.ExampleExe\NachoCron.ExampleExe.csproj", "{222F1C54-72BA-49EE-897D-0B54BDEB5347}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NachoCron.Tests", "NachoCron.Tests\NachoCron.Tests.csproj", "{CEFFEAF5-59E5-4228-9CAB-908ECEB7DC3C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NachoCron.TimeTests", "NachoCron.TimeTests\NachoCron.TimeTests.csproj", "{B17488B4-3FBE-4760-8CBB-E09001E6FC28}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoCron", "NachoCron\NachoCron.csproj", "{BB1D9020-3EEA-4DDD-9021-C4D7A19D95DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C5481212-F651-4E2B-B775-D49EBF303E2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C5481212-F651-4E2B-B775-D49EBF303E2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C5481212-F651-4E2B-B775-D49EBF303E2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C5481212-F651-4E2B-B775-D49EBF303E2B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{222F1C54-72BA-49EE-897D-0B54BDEB5347}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{222F1C54-72BA-49EE-897D-0B54BDEB5347}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{222F1C54-72BA-49EE-897D-0B54BDEB5347}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -33,6 +29,10 @@ Global
 		{B17488B4-3FBE-4760-8CBB-E09001E6FC28}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B17488B4-3FBE-4760-8CBB-E09001E6FC28}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B17488B4-3FBE-4760-8CBB-E09001E6FC28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB1D9020-3EEA-4DDD-9021-C4D7A19D95DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB1D9020-3EEA-4DDD-9021-C4D7A19D95DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB1D9020-3EEA-4DDD-9021-C4D7A19D95DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB1D9020-3EEA-4DDD-9021-C4D7A19D95DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

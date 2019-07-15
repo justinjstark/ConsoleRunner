@@ -141,4 +141,13 @@
   <data name="JobTimedOut" xml:space="preserve">
     <value>{0} timed out.</value>
   </data>
+  <data name="ServiceStarting" xml:space="preserve">
+    <value>Starting NachoCron</value>
+  </data>
+  <data name="ServiceStopped" xml:space="preserve">
+    <value>Stopped NachoCron</value>
+  </data>
+  <data name="ServiceStopping" xml:space="preserve">
+    <value>Stopping NachoCron</value>
+  </data>
 </root>
