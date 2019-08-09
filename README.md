@@ -1,7 +1,9 @@
 # NachoCron
 A CRON scheduler using .NET Core and Quartz.NET
 
-This is a work in progress. The goal is to build a CRON scheduler to launch console applications using .NET Core, Quartz.NET, Dependency Injection with appropriate scoping, Entity Framework for schedule persistence and run history, logging, and be able to install it as a windows service.
+This project is probably abandoned. I was going to build it up to use in production but ran into a roadblock. It turns out running an application as another user from a windows service is not possible without making low-level system calls.
+
+The goal is to build a CRON scheduler to launch console applications using .NET Core, Quartz.NET, Dependency Injection with appropriate scoping, Entity Framework for schedule persistence and run history, logging, and be able to install it as a windows service.
 
 Features:
 - [x] Service resolution of job dependencies
@@ -17,6 +19,7 @@ Features:
 - [x] Long-running job warnings (configurable per job)
 - [x] .NET Core 3 (Currently Preview 6)
 - [x] Ability to install as a Windows Service (using .NET Core 3 Service Worker)
+- [ ] Run-as-user ✖╭╮✖
 - [ ] Job queue tracking and warnings
 - [ ] Long-running job warnings (automatic based on job run history)
 - [ ] EntityFramework job store
